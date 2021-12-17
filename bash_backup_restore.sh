@@ -1,8 +1,9 @@
 #!/bin/bash
 source ${HOME}/.bash_profile
 
-SRCDB=esb
-DSTDB=esb_rest
+SHOST=src_host
+SRCDB=src_base
+DSTDB=dst_base
 DMPDIR="/pgdump/dump"
 
 killQueries(){
@@ -15,15 +16,15 @@ EOF
 }
 
 main(){
-pg_dump -h 3d-esb-postgre01.12stz.local -d $SRCDB -Fc > $DMPDIR/esb.dump
-psql << EOF
-DROP DATABASE IF EXISTS esb_tmp;
-CREATE DATABASE esb_tmp WITH owner esb;
-EOF
-pg_restore -d esb_tmp -Fc -v $DMPDIR/esb.dump
+pg_dump -h $SHOST -d $SRCDB -Fc > $DMPDIR/mydb.dump
+psql -c "CREATE DATABASE dst_tmp WITH owner esb"
+pg_restore -d dst_tmp -Fc -v $DMPDIR/mydb.dump
 killQueries
-psql -c "ALTER DATABASE esb_tmp RENAME TO $DSTDB"
-rm $DMPDIR/esb.dump
+psql <<EOF
+DROP DATABASE $DSTDB;
+ALTER DATABASE dst_tmp RENAME TO $DSTDB;
+EOF
+rm $DMPDIR/mydb.dump
 }
 
 main
